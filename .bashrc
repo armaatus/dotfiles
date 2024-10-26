@@ -71,13 +71,8 @@ if [[ $(grep -E "^(ID|NAME)=" /etc/os-release | grep -q "ubuntu")$? == 0 ]]; the
 fi
 
 # adding keys was buggy, add them outside of the script for now
+chmod 700 ~/.ssh; chmod 600 ~/.ssh/*
 ssh-add -q ~/.ssh/id_ed25519
-
-# ~~~~~~~~~~~~~~~ Prompt ~~~~~~~~~~~~~~~~~~~~~~~~
-
-# Moved to starship 20-03-2024 for all my prompt needs.
-
-eval "$(starship init bash)"
 
 # ~~~~~~~~~~~~~~~ Aliases ~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -120,8 +115,6 @@ source <(flux completion bash)
 alias fgk='flux get kustomizations'
 
 # completions
-source <(talosctl completion bash)
-source <(cilium completion bash)
 source <(devpod completion bash)
 
 # fzf aliases
