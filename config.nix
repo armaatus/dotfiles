@@ -5,8 +5,9 @@
       paths = [
         zsh-completions
         neovim
-        cargo
+        python3
         nodejs_22
+        rustup
         pure-prompt
         fd
         ripgrep
