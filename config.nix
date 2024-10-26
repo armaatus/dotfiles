@@ -4,6 +4,7 @@
       name = "joris-tools";
       paths = [
         zsh-completions
+        tmux
         neovim
         python3
         nodejs_22
