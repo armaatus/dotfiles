@@ -70,10 +70,6 @@ if [[ $(grep -E "^(ID|NAME)=" /etc/os-release | grep -q "ubuntu")$? == 0 ]]; the
 	eval "$(fzf --bash)"
 fi
 
-# adding keys was buggy, add them outside of the script for now
-chmod 700 ~/.ssh; chmod 600 ~/.ssh/*
-ssh-add -q ~/.ssh/id_ed25519
-
 # ~~~~~~~~~~~~~~~ Aliases ~~~~~~~~~~~~~~~~~~~~~~~~
 
 # Repos
