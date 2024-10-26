@@ -8,6 +8,7 @@
         python3
         nodejs_22
         rustup
+        cargo
         pure-prompt
         fd
         ripgrep
