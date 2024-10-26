@@ -7,8 +7,8 @@
         neovim
         python3
         nodejs_22
-        rustup
         cargo
+        rustc
         pure-prompt
         fd
         ripgrep
