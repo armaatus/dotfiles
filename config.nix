@@ -15,6 +15,8 @@
         ripgrep
         fzf
         lazygit
+        kubectl
+        kubectx
         fluxcd
       ];
     };

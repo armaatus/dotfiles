@@ -105,11 +105,21 @@ alias sbr='source ~/.bashrc'
 # fun
 alias fishies=asciiquarium
 
+# kubectl
+alias k='kubectl'
+source <(kubectl completion bash)
+complete -o default -F __start_kubectl k
+alias kgp='kubectl get pods'
+alias kc='kubectx'
+alias kn='kubens'
+
 # flux
 source <(flux completion bash)
 alias fgk='flux get kustomizations'
 
 # completions
+source <(kubectl-cnp completion bash)
+source <(cilium completion bash)
 source <(devpod completion bash)
 
 # fzf aliases
