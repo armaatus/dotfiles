@@ -16,7 +16,6 @@ return {
 				"pyright",
 				"eslint",
 				-- NOTE: roslyn is NOT included here - must be installed via :MasonInstall roslyn
-				-- It requires a custom registry and doesn't work with mason-lspconfig
 			},
 		},
 		dependencies = {
