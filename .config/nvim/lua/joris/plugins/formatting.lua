@@ -21,11 +21,13 @@ return {
 				lua = { "stylua" },
 				typst = { "typstyle" },
 				python = { "isort", "black" },
+				cs = {}, -- Empty = use LSP fallback (Roslyn)
+				razor = {}, -- Empty = use LSP fallback (Roslyn)
 			},
 			format_on_save = {
 				lsp_fallback = true,
 				async = false,
-				timeout_ms = 1000,
+				timeout_ms = 2000, -- Increased for Roslyn
 			},
 		})
 
@@ -33,7 +35,7 @@ return {
 			conform.format({
 				lsp_fallback = true,
 				async = false,
-				timeout_ms = 1000,
+				timeout_ms = 2000, -- Increased for Roslyn
 			})
 		end, { desc = "Format file or range (in visual mode)" })
 	end,

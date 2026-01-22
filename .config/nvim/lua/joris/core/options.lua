@@ -1,13 +1,13 @@
 vim.cmd("let g:netrw_liststyle = 3")
 
+local opt = vim.opt -- for conciseness
+
 vim.filetype.add({
 	extension = {
 		razor = "razor",
 		cshtml = "razor",
 	},
 })
-
-local opt = vim.opt -- for conciseness
 
 opt.conceallevel = 2
 
