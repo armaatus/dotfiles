@@ -1,0 +1,183 @@
+ " =============================================================================
+  " .ideavimrc - Converted from Neovim config
+  " =============================================================================
+
+  " --- Leader Key ---
+  let mapleader = " "
+
+  " =============================================================================
+  " OPTIONS
+  " =============================================================================
+  set relativenumber
+  set number
+  set tabstop=2
+  set shiftwidth=2
+  set expandtab
+  set autoindent
+  set nowrap
+  set ignorecase
+  set smartcase
+  set cursorline
+  set signcolumn=yes
+  set clipboard=unnamedplus
+  set splitright
+  set splitbelow
+  set noswapfile
+  set backspace=indent,eol,start
+  set scrolloff=8
+  set incsearch
+  set hlsearch
+  set timeoutlen=500
+
+  " =============================================================================
+  " PLUGINS (IdeaVim emulated plugins)
+  " =============================================================================
+  set surround              " vim-surround (ys, cs, ds)
+  set commentary            " gcc, gc{motion} for commenting (like Comment.nvim)
+  set NERDTree              " file explorer (like nvim-tree)
+  set highlightedyank       " briefly highlight yanked text
+  set argtextobj            " ia, aa text objects for function arguments
+  set exchange              " cx{motion} to exchange text
+  set matchit               " extended % matching
+  set ReplaceWithRegister   " gr{motion} to replace with register
+  set ideajoin              " smart join lines with J
+  set ideamarks             " sync IntelliJ bookmarks with vim marks
+  set which-key             " show available keybindings (like which-key.nvim)
+  " =============================================================================
+  " CORE KEYMAPS
+  " =============================================================================
+
+  " Exit insert mode with jk
+  inoremap jk <ESC>
+
+  " Clear search highlights
+  nnoremap <leader>nh :nohl<CR>
+
+  " Increment/decrement numbers
+  nnoremap <leader>+ <C-a>
+  nnoremap <leader>- <C-x>
+
+  " =============================================================================
+  " SPLIT/WINDOW MANAGEMENT
+  " =============================================================================
+
+  " Split windows
+  nnoremap <leader>sv :vsplit<CR>
+  nnoremap <leader>sh :split<CR>
+  nnoremap <leader>se <C-w>=
+  nnoremap <leader>sx :close<CR>
+
+  " Navigate between splits (vim-tmux-navigator style)
+  nnoremap <C-h> <C-w>h
+  nnoremap <C-j> <C-w>j
+  nnoremap <C-k> <C-w>k
+  nnoremap <C-l> <C-w>l
+
+  " =============================================================================
+  " SEARCH / TELESCOPE EQUIVALENTS
+  " =============================================================================
+
+  " Find files (like <leader>ff with Telescope)
+  nnoremap <leader>ff :action GotoFile<CR>
+
+  " Find in files / live grep (like <leader>fs with Telescope)
+  nnoremap <leader>fs :action FindInPath<CR>
+
+  " Recent files (like <leader>fr with Telescope)
+  nnoremap <leader>fr :action RecentFiles<CR>
+
+  " Find TODOs (like <leader>ft)
+  nnoremap <leader>ft :action ActivateTODOToolWindow<CR>
+
+  " =============================================================================
+  " FILE EXPLORER (NERDTree - like nvim-tree)
+  " =============================================================================
+  nnoremap <leader>ee :NERDTreeToggle<CR>
+  nnoremap <leader>ef :NERDTreeFind<CR>
+  nnoremap <leader>ec :NERDTreeClose<CR>
+
+  " =============================================================================
+  " LSP EQUIVALENTS
+  " =============================================================================
+
+  " Go to references (like gR with Telescope lsp_references)
+  nnoremap gR :action FindUsages<CR>
+
+  " Go to definition (like gd)
+  nnoremap gd :action GotoDeclaration<CR>
+
+  " Go to implementation (like gi)
+  nnoremap gi :action GotoImplementation<CR>
+
+  " Go to type definition (like gt)
+  nnoremap gt :action GotoTypeDeclaration<CR>
+
+  " Code actions (like <leader>ca)
+  nnoremap <leader>ca :action ShowIntentionActions<CR>
+  vnoremap <leader>ca :action ShowIntentionActions<CR>
+
+  " Rename (like <leader>rn)
+  nnoremap <leader>rn :action RenameElement<CR>
+
+  " Show buffer diagnostics (like <leader>D)
+  nnoremap <leader>D :action ActivateProblemsViewToolWindow<CR>
+
+  " Show line diagnostics (like <leader>d)
+  nnoremap <leader>d :action ShowErrorDescription<CR>
+
+  " Navigate diagnostics (like [d and ]d)
+  nnoremap [d :action GotoPreviousError<CR>
+  nnoremap ]d :action GotoNextError<CR>
+
+  " Hover documentation (like K)
+  nnoremap K :action QuickJavaDoc<CR>
+
+  " Format file (like <leader>mp with conform)
+  nnoremap <leader>mp :action ReformatCode<CR>
+  vnoremap <leader>mp :action ReformatCode<CR>
+
+  " =============================================================================
+  " GIT (like gitsigns)
+  " =============================================================================
+  
+  " Blame line (like <leader>hb)
+  nnoremap <leader>hb :action Annotate<CR>
+
+  " Diff (like <leader>hd)
+  nnoremap <leader>hd :action Compare.SameVersion<CR>
+
+  " Git UI (like <leader>lg for lazygit)
+  nnoremap <leader>lg :action ActivateCommitToolWindow<CR>
+
+  " =============================================================================
+  " SUBSTITUTE (ReplaceWithRegister - like substitute.nvim)
+  " =============================================================================
+
+  " s{motion} to replace with register content
+  nmap s gr
+  nmap ss grr
+  nmap S gr$
+  xmap s gr
+
+  " =============================================================================
+  " COMPLETION (in IdeaVim insert mode)
+  " =============================================================================
+
+  " Navigate completion menu (like <C-j>/<C-k> in nvim-cmp)
+  inoremap <C-j> <down>
+  inoremap <C-k> <up>
+  
+  " Show completion (like <C-Space>)
+  inoremap <C-Space> :action CodeCompletion<CR>
+
+  " =============================================================================
+  " MISCELLANEOUS
+  " =============================================================================
+
+  " Treesitter-like incremental selection (closest equivalent)
+  vnoremap <C-Space> :action EditorSelectWord<CR>
+  vnoremap <BS> :action EditorUnSelectWord<CR>
+
+  " Which-key labels (for nice popup descriptions)
+  let g:WhichKey_ShowVimActions = "true"
+  let g:WhichKey_DefaultDelay = 500
