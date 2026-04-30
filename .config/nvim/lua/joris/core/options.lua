@@ -2,13 +2,6 @@ vim.cmd("let g:netrw_liststyle = 3")
 
 local opt = vim.opt -- for conciseness
 
-vim.filetype.add({
-	extension = {
-		razor = "razor",
-		cshtml = "razor",
-	},
-})
-
 opt.conceallevel = 2
 
 -- line numbers
@@ -51,3 +44,10 @@ opt.splitbelow = true -- split horizontal window to the bottom
 
 -- turn off swapfile
 opt.swapfile = false
+
+-- Run the flush when vim is closed
+vim.api.nvim_create_autocmd("VimLeavePre", {
+	callback = function()
+		vim.cmd("Vimscape flush")
+	end,
+})

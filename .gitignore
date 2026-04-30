@@ -1,2 +1,12 @@
 lazy-lock.json
 lazyvim.json
+
+zed/
+uv/
+NuGet/
+mgba/
+jgit/
+containers/
+cagent/
+raycast/
+.nuxtrc

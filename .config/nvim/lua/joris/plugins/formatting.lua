@@ -11,18 +11,16 @@ return {
 				javascriptreact = { "prettier" },
 				typescriptreact = { "prettier" },
 				svelte = { "prettier" },
+				vue = { "prettier" },
 				css = { "prettier" },
 				html = { "prettier" },
 				json = { "prettier" },
 				yaml = { "prettier" },
-				markdown = { "prettier" },
-				graphql = { "prettier" },
+					graphql = { "prettier" },
 				liquid = { "prettier" },
 				lua = { "stylua" },
 				typst = { "typstyle" },
 				python = { "isort", "black" },
-				cs = {}, -- Empty = use LSP fallback (Roslyn)
-				razor = {}, -- Empty = use LSP fallback (Roslyn)
 			},
 			format_on_save = {
 				lsp_fallback = true,

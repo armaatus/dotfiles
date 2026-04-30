@@ -1,0 +1,30 @@
+os:
+  edit: '[ -z "$NVIM" ] && (nvim -- {{filename}}) || (nvim --server "$NVIM" --remote-send "<C-\\><C-N>:q<CR>" && nvim --server "$NVIM" --remote-send ":e {{filename}}<CR>")'
+  editAtLine: '[ -z "$NVIM" ] && (nvim +{{line}} -- {{filename}}) || (nvim --server "$NVIM" --remote-send "<C-\\><C-N>:q<CR>" && nvim --server "$NVIM" --remote-send ":e {{filename}}<CR>:{{line}}<CR>")'
+customCommands:
+  - key: "<c-d>"
+    context: "localBranches"
+    description: "Delete all local branches that are already merged into the currently checked out branch"
+    command: 'git branch --merged | grep -Ev "(^\*|^\+|master|main|dev)" | xargs --no-run-if-empty git branch -d'
+  - key: "n"
+    context: "localBranches"
+    prompts:
+      - type: "menu"
+        title: "What kind of branch is it?"
+        key: "BranchType"
+        options:
+          - name: "feature"
+            description: "a feature branch"
+            value: "feat"
+          - name: "fix"
+            description: "a fix branch"
+            value: "fix"
+          - name: "refactor"
+            description: "a release branch"
+            value: "refactor"
+      - type: "input"
+        title: "What is the new branch name?"
+        key: "BranchName"
+        initialValue: ""
+    command: "git checkout -b {{.Form.BranchType}}/{{.Form.BranchName}}"
+    loadingText: "Creating branch"

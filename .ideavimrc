@@ -72,6 +72,10 @@
   nnoremap <C-j> <C-w>j
   nnoremap <C-k> <C-w>k
   nnoremap <C-l> <C-w>l
+  
+  " Navigate between tabs
+  nnoremap <S-C-h> :action PreviousTab<CR>
+  nnoremap <S-C-l> :action NextTab<CR>
 
   " =============================================================================
   " SEARCH / TELESCOPE EQUIVALENTS
@@ -92,7 +96,7 @@
   " =============================================================================
   " FILE EXPLORER (NERDTree - like nvim-tree)
   " =============================================================================
-  nnoremap <leader>ee :NERDTreeToggle<CR>
+  nnoremap <leader>ee :NERDTreeFocus<CR>
   nnoremap <leader>ef :NERDTreeFind<CR>
   nnoremap <leader>ec :NERDTreeClose<CR>
 
@@ -116,8 +120,13 @@
   nnoremap <leader>ca :action ShowIntentionActions<CR>
   vnoremap <leader>ca :action ShowIntentionActions<CR>
 
-  " Rename (like <leader>rn)
-  nnoremap <leader>rn :action RenameElement<CR>
+  " Refactor
+  map <leader>rn :action RenameElement<CR>
+  map <leader>rm :action ExtractMethod<CR>
+  map <leader>rv :action IntroduceVariable<CR>
+  map <leader>rf :action IntroduceField<CR>
+  map <leader>rs :action ChangeSignature<CR>
+  map <leader>rr :action Refactorings.QuickListPopupAction<CR>
 
   " Show buffer diagnostics (like <leader>D)
   nnoremap <leader>D :action ActivateProblemsViewToolWindow<CR>
