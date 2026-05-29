@@ -10,3 +10,5 @@ containers/
 cagent/
 raycast/
 .nuxtrc
+
+.nuxt/

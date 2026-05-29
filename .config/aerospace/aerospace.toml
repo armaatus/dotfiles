@@ -112,6 +112,7 @@ alt-o = "workspace Outlook"
 alt-r = "workspace Rider"
 alt-d = "workspace Docker"
 alt-s = "workspace Slack"
+alt-g = "workspace Game"
 
 # See: https://nikitabobko.github.io/AeroSpace/commands#move-node-to-workspace
 alt-shift-1 = 'move-node-to-workspace 1'
@@ -130,6 +131,7 @@ alt-shift-n = 'move-node-to-workspace Notes'
 alt-shift-p = 'move-node-to-workspace Passwords'
 alt-shift-t = 'move-node-to-workspace Terminal'
 alt-shift-v = 'move-node-to-workspace V'
+alt-shift-g = 'move-node-to-workspace Game'
 
 alt-shift-f = 'fullscreen'
 
@@ -137,6 +139,7 @@ alt-shift-f = 'fullscreen'
 alt-tab = 'workspace-back-and-forth'
 # See: https://nikitabobko.github.io/AeroSpace/commands#move-workspace-to-monitor
 alt-shift-tab = 'move-workspace-to-monitor --wrap-around next'
+alt-shift-backtick = 'move-node-to-monitor --wrap-around next'
 
 # See: https://nikitabobko.github.io/AeroSpace/commands#mode
 alt-shift-semicolon = 'mode service'
@@ -221,6 +224,14 @@ run = "move-node-to-workspace Rider"
 if.app-id = 'com.todoist.mac.Todoist'
 run = "move-node-to-workspace 9"
 
+[[on-window-detected]]
+if.app-id = 'com.jagex.launcher'
+run = 'move-node-to-workspace Launcher'
+
+[[on-window-detected]]
+if.app-id = 'net.runelite.launcher'
+run = ['move-node-to-workspace Game', 'exec-and-forget osascript -e "tell application \"System Events\" to set visible of process \"Jagex Launcher\" to false"']
+
 [workspace-to-monitor-force-assignment]
 
 "Slack" = ['secondary', 'main']
@@ -228,3 +239,7 @@ run = "move-node-to-workspace 9"
 "Browser" = ['secondary', 'main']
 
 "Notes" = ['secondary', 'main']
+
+"Game" = ['secondary', 'main']
+
+"Launcher" = ['secondary', 'main']
