@@ -20,7 +20,7 @@ return {
 				liquid = { "prettier" },
 				lua = { "stylua" },
 				typst = { "typstyle" },
-				python = { "isort", "black" },
+				python = { "ruff_organize_imports", "ruff_format" },
 			},
 			format_on_save = {
 				lsp_fallback = true,

@@ -1,3 +1,13 @@
+config-version = 2
+
+# In config-version 2 persistent workspaces are no longer inferred from
+# keybindings and must be declared explicitly.
+persistent-workspaces = [
+  '1', '2', '3', '4', '5', '6', '7', '8', '9',
+  'Browser', 'Docker', 'E', 'Game', 'M', 'Notes', 'Outlook',
+  'Passwords', 'Rider', 'Slack', 'Terminal', 'V',
+]
+
 after-login-command = []
 
 after-startup-command = [
@@ -180,8 +190,24 @@ if.app-id = 'com.mitchellh.ghostty'
 run = "move-node-to-workspace Terminal"
 
 [[on-window-detected]]
+if.app-id = 'com.stablyai.orca'
+run = "move-node-to-workspace Terminal"
+
+[[on-window-detected]]
 if.app-id = 'com.apple.Safari'
 run = "move-node-to-workspace Browser"
+
+[[on-window-detected]]
+if.app-id = 'org.mozilla.firefox'
+run = "move-node-to-workspace Browser"
+
+[[on-window-detected]]
+if.app-id = 'com.apple.iphonesimulator'
+run = [
+  'layout tiling',
+  'move-node-to-workspace Browser',
+  'exec-and-forget ~/.config/aerospace/fit-simulator.sh',
+]
 
 [[on-window-detected]]
 if.app-id = 'com.microsoft.Outlook'
@@ -217,6 +243,10 @@ if.app-id = 'com.electron.dockerdesktop'
 run = "move-node-to-workspace Docker"
 
 [[on-window-detected]]
+if.app-id = 'dev.kdrag0n.MacVirt'
+run = "move-node-to-workspace Docker"
+
+[[on-window-detected]]
 if.app-id = 'com.jetbrains.rider'
 run = "move-node-to-workspace Rider"
 
@@ -235,6 +265,8 @@ run = ['move-node-to-workspace Game', 'exec-and-forget osascript -e "tell applic
 [workspace-to-monitor-force-assignment]
 
 "Slack" = ['secondary', 'main']
+
+"M" = ['secondary', 'main']
 
 "Browser" = ['secondary', 'main']
 

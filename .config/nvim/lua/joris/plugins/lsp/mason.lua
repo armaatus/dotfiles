@@ -14,6 +14,7 @@ return {
 				"emmet_ls",
 				"prismals",
 				"pyright",
+				"ruff",
 				"eslint",
 				-- NOTE: roslyn is NOT included here - must be installed via :MasonInstall roslyn
 			},
@@ -44,9 +45,6 @@ return {
 			ensure_installed = {
 				"prettier", -- prettier formatter
 				"stylua", -- lua formatter
-				"isort", -- python formatter
-				"black", -- python formatter
-				"pylint",
 				"eslint_d",
 			},
 		},

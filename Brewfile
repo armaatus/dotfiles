@@ -19,6 +19,7 @@ brew "neovim"
 brew "node"
 brew "pandoc"
 brew "python@3.14"
+brew "ruff"
 brew "pipx"
 brew "pnpm"
 brew "poppler"
@@ -32,11 +33,9 @@ brew "yazi"
 brew "zoxide"
 brew "zsh-autosuggestions"
 brew "zsh-syntax-highlighting"
-brew "felixkratz/formulae/borders"
+brew "felixkratz/formulae/borders", trusted: true
 
-cask "nikitabobko/tap/aerospace"
+cask "nikitabobko/tap/aerospace", trusted: true
 cask "claude-code"
 cask "font-meslo-lg-nerd-font"
 cask "font-symbols-only-nerd-font"
-
-npm "tree-sitter-cli"
