@@ -36,6 +36,8 @@ return {
 			"vimdoc",
 			"c",
 			"rust",
+			"toml",
+			"ron",
 		}
 
 		-- install any missing parsers (async; no-op once present)

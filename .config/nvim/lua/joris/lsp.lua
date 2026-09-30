@@ -22,8 +22,14 @@ vim.api.nvim_create_autocmd("LspAttach", {
 		opts.desc = "Show LSP type definitions"
 		keymap.set("n", "gt", "<cmd>Telescope lsp_type_definitions<CR>", opts) -- show lsp type definitions
 
-		opts.desc = "See available code actions"
-		keymap.set({ "n", "v" }, "<leader>ca", vim.lsp.buf.code_action, opts) -- see available code actions, in visual mode will apply to selection
+		-- rust buffers get rustaceanvim versions of K and <leader>ca (see plugins/lsp/rustaceanvim.lua);
+		-- LspAttach fires for every client, so don't clobber them when e.g. tailwindcss attaches later
+		local is_rust = vim.bo[ev.buf].filetype == "rust"
+
+		if not is_rust then
+			opts.desc = "See available code actions"
+			keymap.set({ "n", "v" }, "<leader>ca", vim.lsp.buf.code_action, opts) -- see available code actions, in visual mode will apply to selection
+		end
 
 		opts.desc = "Smart rename"
 		keymap.set("n", "<leader>rn", vim.lsp.buf.rename, opts) -- smart rename
@@ -44,8 +50,10 @@ vim.api.nvim_create_autocmd("LspAttach", {
 			vim.diagnostic.jump({ count = 1, float = true })
 		end, opts) -- jump to next diagnostic in buffer
 
-		opts.desc = "Show documentation for what is under cursor"
-		keymap.set("n", "K", vim.lsp.buf.hover, opts) -- show documentation for what is under cursor
+		if not is_rust then
+			opts.desc = "Show documentation for what is under cursor"
+			keymap.set("n", "K", vim.lsp.buf.hover, opts) -- show documentation for what is under cursor
+		end
 
 		opts.desc = "Restart LSP"
 		keymap.set("n", "<leader>rs", ":LspRestart<CR>", opts) -- mapping to restart lsp if necessary

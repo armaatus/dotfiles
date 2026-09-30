@@ -16,6 +16,8 @@ return {
 				"pyright",
 				"ruff",
 				"eslint",
+				"tombi", -- TOML (Cargo.toml); taplo is unmaintained
+				-- NOTE: rust-analyzer is NOT installed via mason - use `rustup component add rust-analyzer`
 				-- NOTE: roslyn is NOT included here - must be installed via :MasonInstall roslyn
 			},
 		},
