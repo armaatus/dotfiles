@@ -9,6 +9,10 @@ jgit/
 containers/
 cagent/
 raycast/
+btop/
+gh/
+opencode/
+powershell/
 .nuxtrc
 
 .nuxt/
