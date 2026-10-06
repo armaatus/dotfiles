@@ -1,27 +1,22 @@
 #!/usr/bin/env bash
-# Open a PR in its own git worktree, in a new Ghostty window running nvim.
+# Open a PR in its own git worktree, in a new Ghostty window running nvim. For working
+# on the code; reviews (gh-pr-review) never create a worktree.
 #
-#   gh-pr-worktree OWNER/REPO N            open it
-#   gh-pr-worktree --no-open OWNER/REPO N  only create/reuse it and print its path
+#   gh-pr-worktree OWNER/REPO N
 #
 # Reuses a worktree that already has the PR branch checked out; otherwise creates
 # <clone>/.worktrees/pr-N. The clone is looked up in repoPaths in common.yml.
+# gh-pr-cleanup removes it once the PR is merged or closed.
 set -euo pipefail
 
-open_window=true
-if [[ "${1:-}" == "--no-open" ]]; then open_window=false; shift; fi
 repo=$1 num=$2
 CONFIG_DIR="$(cd "$(dirname "$(readlink -f "$0")")/.." && pwd)"
+source "$CONFIG_DIR/bin/lib/repo-paths.sh"
 
-clone=$(awk -v r="$repo" '
-  /^repoPaths:/ { in_paths = 1; next }
-  in_paths && /^[^ ]/ { in_paths = 0 }
-  in_paths && $1 == r ":" { print $2 }' "$CONFIG_DIR/common.yml")
-clone=${clone/#\~/$HOME}
-
+clone=$(clone_for "$repo")
 if [[ -z "$clone" ]] || ! git -C "$clone" rev-parse --git-dir >/dev/null 2>&1; then
   echo "No local clone for $repo. Add it to repoPaths in $CONFIG_DIR/common.yml." >&2
-  if $open_window; then printf 'Enter to return '; read -r _; fi
+  printf 'Enter to return '; read -r _
   exit 1
 fi
 
@@ -34,12 +29,10 @@ dir=$(git -C "$clone" worktree list --porcelain | awk -v b="branch refs/heads/$h
 if [[ -z "$dir" ]]; then
   dir="$clone/.worktrees/pr-$num"
   if [[ ! -d "$dir" ]]; then
-    git -C "$clone" worktree add --quiet --detach "$dir" >&2
-    (cd "$dir" && gh pr checkout "$num" -R "$repo") >&2
+    git -C "$clone" worktree add --quiet --detach "$dir"
+    (cd "$dir" && gh pr checkout "$num" -R "$repo")
   fi
 fi
-
-if ! $open_window; then echo "$dir"; exit 0; fi
 
 open -na Ghostty.app --args --window-save-state=never --working-directory="$dir" --title="$repo#$num" \
   -e /bin/zsh -lic 'nvim; exec zsh -l'

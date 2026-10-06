@@ -1,0 +1,63 @@
+#!/usr/bin/env bash
+# Clean up what gh-pr-review and gh-pr-worktree leave behind:
+#   - `review-<repo>-<N>` tmux sessions of merged or closed PRs, and their tuicr drafts
+#   - review sessions nobody has looked at for 12 hours (tuicr keeps their drafts)
+#   - .worktrees/pr-N worktrees of merged or closed PRs, plus the local branch when it
+#     holds nothing beyond the PR head; worktrees with uncommitted changes are skipped
+# gh-pr-review runs it in the background on every launch.
+#
+#   gh-pr-cleanup [--dry-run]
+set -euo pipefail
+
+CONFIG_DIR="$(cd "$(dirname "$(readlink -f "$0")")/.." && pwd)"
+source "$CONFIG_DIR/bin/lib/repo-paths.sh"
+dry_run=false
+[[ "${1:-}" == "--dry-run" ]] && dry_run=true
+idle_limit=$((12 * 3600))
+
+# name attached-clients last-activity, for review sessions only.
+sessions=$(tmux list-sessions -F '#{session_name} #{session_attached} #{session_activity}' 2>/dev/null | grep '^review-' || true)
+
+while read -r session attached activity; do
+  [[ -n "$session" ]] || continue
+  ((attached == 0 && $(date +%s) - activity > idle_limit)) || continue
+  if $dry_run; then echo "would end idle  $session"; continue; fi
+  tmux kill-session -t "=$session" 2>/dev/null || true
+  echo "ended idle  $session"
+done <<<"$sessions"
+
+repo_paths |
+while read -r repo clone; do
+  name=${repo##*/}
+
+  # PR numbers that have a worktree or a review session.
+  nums=$( { for dir in "$clone"/.worktrees/pr-*; do [[ -d "$dir" ]] && echo "${dir##*/pr-}"; done
+            awk -v p="review-$name-" 'index($1, p) == 1 && substr($1, length(p) + 1) ~ /^[0-9]+$/ { print substr($1, length(p) + 1) }' <<<"$sessions"; } | sort -un)
+
+  for num in $nums; do
+    pr=$(gh pr view "$num" -R "$repo" --json state,headRefOid --jq '"\(.state) \(.headRefOid)"' </dev/null 2>/dev/null) || continue
+    read -r state head_oid <<<"$pr"
+    [[ $state == OPEN ]] && continue
+    dir="$clone/.worktrees/pr-$num"
+
+    if [[ -d "$dir" && -n "$(git -C "$dir" status --porcelain)" ]]; then
+      echo "skip  $repo#$num ($state) has uncommitted changes: $dir"
+      continue
+    fi
+    if $dry_run; then
+      echo "would clean up  $repo#$num ($state)"
+      continue
+    fi
+    tmux kill-session -t "=review-$name-$num" 2>/dev/null || true
+    tuicr review clear --session "gh:$repo/pr/$num" </dev/null >/dev/null 2>&1 || true
+    if [[ -d "$dir" ]]; then
+      branch=$(git -C "$dir" symbolic-ref --quiet --short HEAD || true)
+      git -C "$clone" worktree remove "$dir"
+      if [[ -n "$branch" && "$(git -C "$clone" rev-parse "refs/heads/$branch")" == "$head_oid" ]]; then
+        git -C "$clone" branch --quiet -D "$branch"
+      fi
+    fi
+    echo "cleaned up  $repo#$num ($state)"
+  done
+  $dry_run || git -C "$clone" worktree prune
+done

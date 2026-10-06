@@ -1,4 +1,4 @@
-# Reviewing PRs from gh-dash: `I` opens a tmux session with tuicr + a Claude reviewer
+# Reviewing PRs from gh-dash: `R` opens a tmux session with tuicr + a Claude reviewer
 # (see ~/.config/gh-dash/README.md). Types match REVIEW.md's severities, so the author's
 # /process-review reads ours like the CI bot's.
 editor = "nvim"

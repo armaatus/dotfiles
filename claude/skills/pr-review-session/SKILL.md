@@ -12,6 +12,7 @@ Argument: `OWNER/REPO#N`. Split it into `REPO_SLUG=OWNER/REPO` and `N`. The tuic
 ## Hard rules
 
 - Read-only on the repo and on GitHub. Never edit, create or delete repo files; never commit, push, switch branches, or post, reply, resolve, approve or merge on GitHub. The human submits from tuicr.
+- You run in the repo's own clone, whose working tree is whatever the human has checked out, **not the PR**. Read the PR from git only: `git show $HEAD:<path>`, `git grep <pattern> $HEAD`, `git diff`. Never check out the PR, create a worktree or start agents with worktree isolation; `Read` and `Grep` on the working tree show the wrong code.
 - The only things you write: tuicr drafts in this PR's session, and the review notes file (step 6).
 - Every finding cites a `file:line` you actually read. If unsure it is real, drop it.
 - Never repeat a point an open review thread already makes (they are listed in the context).
@@ -20,10 +21,10 @@ Argument: `OWNER/REPO#N`. Split it into `REPO_SLUG=OWNER/REPO` and `N`. The tuic
 
 ```bash
 ~/.config/gh-dash/bin/gh-pr-context OWNER/REPO N
-git fetch origin
+git fetch origin <base> pull/N/head
 ```
 
-Read `REVIEW.md`, `CONTEXT.md` and `docs/agents/domain.md` when they exist: the rubric and the domain language.
+`$HEAD` from here on is the sha in the context's `head: <branch> @ <sha>` line. Read `REVIEW.md`, `CONTEXT.md` and `docs/agents/domain.md` at `$HEAD` when they exist: the rubric and the domain language.
 
 ## 2. Brief (print it, at most ~40 lines)
 
@@ -41,11 +42,11 @@ Print the brief before starting step 3, so the human can read while you work.
 
 Scope:
 
-- The bot never reviewed: the whole PR, `git diff origin/<base>...origin/<head>`.
-- Commits after the bot's review: `git diff <bot-review-sha> origin/<head>`.
+- The bot never reviewed: the whole PR, `git diff origin/<base>...$HEAD`.
+- Commits after the bot's review: `git diff <bot-review-sha> $HEAD`.
 - None: skip the line review and do only the design pass.
 
-Line review: if `.claude/skills/review-pr/SKILL.md` exists, follow its Steps 3-5 (fan-out threshold, one agent per surface, skeptic verification, severity, exact new-file line numbers) on that scope. Skip its Step 0 mode logic and Steps 6-9: never post. Otherwise review by its categories yourself: architecture, security, performance, error handling, tests, data integrity, code quality, API design.
+Line review: if `$HEAD:.claude/skills/review-pr/SKILL.md` exists, follow its Steps 3-5 with `$HEAD` for `origin/${SOURCE}` (fan-out threshold, one agent per surface, skeptic verification, severity, exact new-file line numbers) on that scope. Skip its Step 0 mode logic and Steps 6-9: never post. Otherwise review by its categories yourself: architecture, security, performance, error handling, tests, data integrity, code quality, API design.
 
 Design pass, over the whole PR: fit with the architecture, naming against the domain language, behaviour without a test, scope beyond the linked issue. Report only what has evidence.
 
