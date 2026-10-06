@@ -259,6 +259,10 @@ if.app-id = 'com.jagex.launcher'
 run = 'move-node-to-workspace Launcher'
 
 [[on-window-detected]]
+if.app-id = 'V380-Ori.Astris'
+run = 'move-node-to-workspace Game'
+
+[[on-window-detected]]
 if.app-id = 'net.runelite.launcher'
 run = ['move-node-to-workspace Game', 'exec-and-forget osascript -e "tell application \"System Events\" to set visible of process \"Jagex Launcher\" to false"']
 
