@@ -52,6 +52,12 @@ defaults:
 
 keybindings:
   universal:
+    # R reviews in the PR view, so refresh-all moves to ctrl+r.
+    - key: ctrl+r
+      builtin: refreshAll
+    - key: Q
+      name: review queue (riskiest first)
+      command: ~/.config/gh-dash/bin/gh-queue
     - key: B
       name: board (my items, current sprint)
       command: open "https://github.com/orgs/Brand-Boekhouders/projects/5?filterQuery=assignee%3A%40me+sprint%3A%40current"
@@ -59,7 +65,7 @@ keybindings:
     - key: O
       name: open in worktree
       command: ~/.config/gh-dash/bin/gh-pr-worktree {{.RepoName}} {{.PrNumber}}
-    - key: I
+    - key: R
       name: review with tuicr + Claude
       command: ~/.config/gh-dash/bin/gh-pr-review {{.RepoName}} {{.PrNumber}}
     - key: T
