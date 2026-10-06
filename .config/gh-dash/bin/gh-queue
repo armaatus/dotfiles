@@ -13,23 +13,32 @@ fetch() {
   local kind=$1 query=$2
   gh api graphql -f q="$query" -f query='
     query($q:String!){search(type:ISSUE,first:50,query:$q){nodes{... on PullRequest{
-      number title author{login} repository{nameWithOwner}
+      number title changedFiles author{login} repository{nameWithOwner}
       files(first:100){nodes{path additions deletions}}}}}}' |
   jq -r -L "$BIN_DIR/lib" --arg kind "$kind" 'include "tier";
     .data.search.nodes[]
-    | ({files: .files.nodes} | tier) as $t
-    | [({DEEP: 0, SKIM: 1, TRUST: 2}[$t.tier]), $t.tier, $kind,
+    | ({files: .files.nodes, changedFiles} | tier) as $t
+    | [($t.tier | tier_rank), $t.tier, $kind,
        "\(.repository.nameWithOwner | split("/")[1])#\(.number)", .author.login, .title, $t.reason,
        .repository.nameWithOwner, "\(.number)"]
     | @tsv'
 }
 
-rows=$( { fetch review "$base -reviewed-by:@me"; fetch re-review "$base reviewed-by:@me -review:approved"; } | sort -t$'\t' -k1,1n)
+mode=pick
+case "${1:-}" in
+  "") ;;
+  --list) mode=list ;;
+  *) echo "unknown option: $1" >&2; exit 2 ;;
+esac
+
+review=$(fetch review "$base -reviewed-by:@me")
+rereview=$(fetch re-review "$base reviewed-by:@me -review:approved")
+rows=$(printf '%s\n%s\n' "$review" "$rereview" | grep -v '^$' | sort -t$'\t' -k1,1n || true)
 if [[ -z "$rows" ]]; then echo "Nothing to review."; exit 0; fi
 
 table=$(printf '%s\n' "$rows" | awk -F'\t' '{printf "%-6s %-10s %-30s %-12s %s  (%s)\t%s\t%s\n", $2, $3, $4, $5, $6, $7, $8, $9}')
 
-if [[ "${1:-}" == "--list" || ! -t 1 ]] || ! command -v fzf >/dev/null; then
+if [[ $mode == list || ! -t 1 ]] || ! command -v fzf >/dev/null; then
   printf '%s\n' "$table" | cut -f1
   exit 0
 fi

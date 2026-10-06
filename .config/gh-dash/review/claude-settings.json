@@ -2,6 +2,7 @@
   "permissions": {
     "allow": [
       "Read",
+      "Agent",
       "Grep",
       "Glob",
       "Bash(git fetch:*)",
@@ -22,6 +23,8 @@
     ],
     "deny": [
       "NotebookEdit",
+      "Bash(tuicr review clear:*)",
+      "Bash(tuicr review clearc:*)",
       "Bash(git commit:*)",
       "Bash(git push:*)",
       "Bash(git reset:*)",

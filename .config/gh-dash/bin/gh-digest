@@ -10,7 +10,7 @@ NOTES="$HOME/Documents/brand/review-notes"
 days=7 to_stdout=false
 while (($#)); do
   case $1 in
-    --days) days=$2; shift ;;
+    --days) days=${2:?--days needs a number}; shift ;;
     --stdout) to_stdout=true ;;
     *) echo "unknown option: $1" >&2; exit 2 ;;
   esac
@@ -20,12 +20,12 @@ done
 since=$(date -v-"${days}"d +%Y-%m-%d)
 week=$(date +%G-W%V)
 mkdir -p "$NOTES"
-noted=$( (cat "$NOTES"/*.md 2>/dev/null || true) | { grep -oE '[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+#[0-9]+' || true; } | jq -R . | jq -s .)
+noted=$( (cat "$NOTES"/*.md 2>/dev/null || true) | { grep -oE '^### [A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+#[0-9]+' || true; } | sed 's/^### //' | jq -R . | jq -s .)
 
 prs=$(gh api graphql --paginate -f q="is:pr is:merged archived:false org:Brand-Boekhouders merged:>=$since -author:@me -author:app/dependabot" -f query='
   query($q:String!,$endCursor:String){search(type:ISSUE,first:50,after:$endCursor,query:$q){
     pageInfo{hasNextPage endCursor}
-    nodes{... on PullRequest{number title url body mergedAt baseRefName headRefName additions deletions
+    nodes{... on PullRequest{number title url body mergedAt baseRefName headRefName additions deletions changedFiles
       author{login} repository{nameWithOwner}
       closingIssuesReferences(first:5){nodes{number title}}
       files(first:100){nodes{path additions deletions}}}}}}' |
@@ -33,7 +33,7 @@ prs=$(gh api graphql --paginate -f q="is:pr is:merged archived:false org:Brand-B
     [.[].data.search.nodes[]
      | select((.baseRefName == "main" and .headRefName == "develop") | not)
      | select(("\(.repository.nameWithOwner)#\(.number)" | IN($noted[])) | not)
-     | ({files: .files.nodes} | tier) as $t
+     | ({files: .files.nodes, changedFiles} | tier) as $t
      | {pr: "\(.repository.nameWithOwner)#\(.number)", url, title, author: .author.login,
         merged: .mergedAt[:10], tier: $t.tier, why: $t.reason, size: "+\(.additions) -\(.deletions)",
         issues: [.closingIssuesReferences.nodes[] | "#\(.number) \(.title)"],

@@ -22,10 +22,10 @@ while read -r repo clone; do
 
   # PR numbers that have a worktree or a review session.
   nums=$( { for dir in "$clone"/.worktrees/pr-*; do [[ -d "$dir" ]] && echo "${dir##*/pr-}"; done
-            grep -E "^$name-[0-9]+$" <<<"$sessions" | sed "s/^$name-//" || true; } | sort -un)
+            awk -v p="$name-" 'index($0, p) == 1 && substr($0, length(p) + 1) ~ /^[0-9]+$/ { print substr($0, length(p) + 1) }' <<<"$sessions"; } | sort -un)
 
   for num in $nums; do
-    state=$(gh pr view "$num" -R "$repo" --json state --jq .state)
+    state=$(gh pr view "$num" -R "$repo" --json state --jq .state 2>/dev/null) || continue
     [[ $state == OPEN ]] && continue
     dir="$clone/.worktrees/pr-$num"
 

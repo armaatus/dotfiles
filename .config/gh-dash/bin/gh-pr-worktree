@@ -21,7 +21,7 @@ clone=${clone/#\~/$HOME}
 
 if [[ -z "$clone" ]] || ! git -C "$clone" rev-parse --git-dir >/dev/null 2>&1; then
   echo "No local clone for $repo. Add it to repoPaths in $CONFIG_DIR/common.yml." >&2
-  printf 'Enter to return '; read -r _
+  if $open_window; then printf 'Enter to return '; read -r _; fi
   exit 1
 fi
 

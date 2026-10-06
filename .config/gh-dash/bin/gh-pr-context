@@ -11,7 +11,7 @@ me=$(gh api user --jq .login)
 
 gh api graphql -F owner="${repo%%/*}" -F name="${repo#*/}" -F num="$num" -f query='
   query($owner:String!,$name:String!,$num:Int!){repository(owner:$owner,name:$name){pullRequest(number:$num){
-    number title url author{login} isDraft state baseRefName headRefName headRefOid additions deletions body
+    number title url author{login} isDraft state baseRefName headRefName headRefOid additions deletions changedFiles body
     closingIssuesReferences(first:10){nodes{number title body}}
     files(first:100){nodes{path additions deletions}}
     commits(last:100){nodes{commit{oid committedDate messageHeadline}}}
@@ -20,7 +20,7 @@ gh api graphql -F owner="${repo%%/*}" -F name="${repo#*/}" -F num="$num" -f quer
       comments(first:1){nodes{author{login} body}}}}}}}' |
 jq -r -L "$LIB" --arg me "$me" --arg repo "$repo" 'include "tier";
   .data.repository.pullRequest as $pr
-  | ($pr | {files: .files.nodes} | tier) as $t
+  | ($pr | {files: .files.nodes, changedFiles} | tier) as $t
   | def last_review(who): [$pr.reviews.nodes[] | select(who)] | last;
   (last_review(.author.__typename == "Bot" and .author.login == "claude")) as $bot
   | (last_review(.author.login == $me)) as $mine
@@ -32,7 +32,7 @@ jq -r -L "$LIB" --arg me "$me" --arg repo "$repo" 'include "tier";
   "url: \($pr.url)",
   "author: \($pr.author.login)   state: \($pr.state)\(if $pr.isDraft then " (draft)" else "" end)",
   "base: \($pr.baseRefName)   head: \($pr.headRefName) @ \($pr.headRefOid)",
-  "size: +\($pr.additions) -\($pr.deletions), \($pr.files.nodes | length) files",
+  "size: +\($pr.additions) -\($pr.deletions), \($pr.changedFiles) files",
   "tier: \($t.tier) (\($t.reason))",
   "tuicr session: gh:\($repo)/pr/\($pr.number)",
   "",

@@ -54,6 +54,28 @@ check "one real file makes it not trust" \
 check "size shows as k above 1000" \
   "$(pr "$(f frontend/src/features/x/A.tsx 1500 200)")" DEEP "1.7k lines"
 check "empty file list is skim" '{"files":[]}' SKIM "0 lines"
+check "money outside the money apps (transaction linking) is deep" \
+  "$(pr "$(f brand_erp/admin_api/companies/transaction_links/services.py 40)")" DEEP money
+check "vat code is money" \
+  "$(pr "$(f brand_erp/admin_api/vat_return/views.py 10)")" DEEP money
+check "vat inside a word is not money" \
+  "$(pr "$(f brand_erp/companies/private_notes.py 10)")" SKIM "10 lines"
+check "author in a file name is not auth" \
+  "$(pr "$(f brand_erp/todos/author_utils.py 10)")" SKIM "10 lines"
+check "an auth module is auth" \
+  "$(pr "$(f brand_erp/platform/platform_auth/views.py 10)")" DEEP auth
+check "platform email is not auth" \
+  "$(pr "$(f brand_erp/platform/email/sender.py 10)")" SKIM "10 lines"
+check "nested app api.py is cross-app api" \
+  "$(pr "$(f brand_erp/uploads/receipts/api.py 10)")" DEEP "cross-app api"
+check "dependency manifests only is trust" \
+  "$(pr "$(f pyproject.toml 2 2)" "$(f frontend/package.json 3 3)" "$(f uv.lock 300)")" TRUST "only"
+check "more files than fetched is deep" \
+  '{"changedFiles":140,"files":[{"path":"frontend/src/a.tsx","additions":5,"deletions":0}]}' DEEP "140 files"
+check "rank orders deep, skim, trust" \
+  "$(pr "$(f docs/a.md 1)")" TRUST "only"
+got=$(jq -rn -L "$LIB" 'include "tier"; ["TRUST","DEEP","SKIM"] | map(tier_rank) | join(",")')
+[[ $got == "2,0,1" ]] && echo "ok   tier_rank" || { echo "FAIL tier_rank: $got"; fails=$((fails + 1)); }
 
 if ((fails)); then echo "$fails failing"; exit 1; fi
 echo "all passed"
