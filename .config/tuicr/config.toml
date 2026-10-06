@@ -2,6 +2,7 @@
 # (see ~/.config/gh-dash/README.md). Types match REVIEW.md's severities, so the author's
 # /process-review reads ours like the CI bot's.
 editor = "nvim"
+diff_view = "side-by-side"
 username = "armaatus"
 pr_comments_visibility = "unresolved"
 show_pr_checks = true
