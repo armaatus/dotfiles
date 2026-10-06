@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+# Remove .worktrees/pr-N worktrees whose PR is merged or closed. Only touches pr-N
+# directories created by gh-pr-worktree, and skips any with uncommitted changes.
+#
+#   gh-pr-worktree-prune [--dry-run]
+set -euo pipefail
+
+CONFIG_DIR="$(cd "$(dirname "$(readlink -f "$0")")/.." && pwd)"
+dry_run=false
+[[ "${1:-}" == "--dry-run" ]] && dry_run=true
+
+awk '
+  /^repoPaths:/ { in_paths = 1; next }
+  in_paths && /^[^ ]/ { in_paths = 0 }
+  in_paths && NF == 2 { sub(/:$/, "", $1); print $1, $2 }' "$CONFIG_DIR/common.yml" |
+while read -r repo clone; do
+  clone=${clone/#\~/$HOME}
+  for dir in "$clone"/.worktrees/pr-*; do
+    [[ -d "$dir" ]] || continue
+    num=${dir##*/pr-}
+    state=$(gh pr view "$num" -R "$repo" --json state --jq .state)
+    [[ $state == OPEN ]] && continue
+    if [[ -n "$(git -C "$dir" status --porcelain)" ]]; then
+      echo "skip  $repo#$num ($state) has uncommitted changes: $dir"
+    elif $dry_run; then
+      echo "would remove  $repo#$num ($state): $dir"
+    else
+      git -C "$clone" worktree remove "$dir"
+      echo "removed  $repo#$num ($state): $dir"
+    fi
+  done
+  $dry_run || git -C "$clone" worktree prune
+done

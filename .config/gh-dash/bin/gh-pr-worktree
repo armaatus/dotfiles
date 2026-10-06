@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+# Open a PR in its own git worktree, in a new Ghostty window running nvim.
+#
+#   gh-pr-worktree OWNER/REPO N
+#
+# Reuses a worktree that already has the PR branch checked out; otherwise creates
+# <clone>/.worktrees/pr-N. The clone is looked up in repoPaths in common.yml.
+set -euo pipefail
+
+repo=$1 num=$2
+CONFIG_DIR="$(cd "$(dirname "$(readlink -f "$0")")/.." && pwd)"
+
+clone=$(awk -v r="$repo" '
+  /^repoPaths:/ { in_paths = 1; next }
+  in_paths && /^[^ ]/ { in_paths = 0 }
+  in_paths && $1 == r ":" { print $2 }' "$CONFIG_DIR/common.yml")
+clone=${clone/#\~/$HOME}
+
+if [[ -z "$clone" ]] || ! git -C "$clone" rev-parse --git-dir >/dev/null 2>&1; then
+  echo "No local clone for $repo. Add it to repoPaths in $CONFIG_DIR/common.yml." >&2
+  printf 'Enter to return '; read -r _
+  exit 1
+fi
+
+head=$(gh pr view "$num" -R "$repo" --json headRefName --jq .headRefName)
+
+dir=$(git -C "$clone" worktree list --porcelain | awk -v b="branch refs/heads/$head" '
+  /^worktree / { w = substr($0, 10) }
+  $0 == b { print w; exit }')
+
+if [[ -z "$dir" ]]; then
+  dir="$clone/.worktrees/pr-$num"
+  if [[ ! -d "$dir" ]]; then
+    git -C "$clone" worktree add --quiet --detach "$dir"
+    (cd "$dir" && gh pr checkout "$num" -R "$repo")
+  fi
+fi
+
+open -na Ghostty.app --args --working-directory="$dir" --title="$repo#$num" \
+  -e /bin/zsh -lic 'nvim; exec zsh -l'
+echo "Opened $repo#$num in $dir"

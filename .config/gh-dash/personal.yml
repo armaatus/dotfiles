@@ -1,0 +1,21 @@
+# Personal / side-project dashboard: everything outside Brand-Boekhouders.
+include:
+  - common.yml
+
+prSections:
+  - title: Mine
+    filters: is:open author:@me -org:Brand-Boekhouders
+  - title: To review
+    filters: is:open review-requested:@me -org:Brand-Boekhouders
+  - title: Involved
+    filters: is:open involves:@me -author:@me -org:Brand-Boekhouders
+
+issuesSections:
+  - title: Assigned
+    filters: is:open assignee:@me -org:Brand-Boekhouders
+  - title: Involved
+    filters: is:open involves:@me -assignee:@me -org:Brand-Boekhouders
+
+notificationsSections:
+  - title: Participating
+    filters: reason:participating

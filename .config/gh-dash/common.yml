@@ -1,0 +1,90 @@
+# Shared by config.yml (work) and personal.yml. Sections live in those files.
+defaults:
+  preview:
+    open: true
+    width: 0.45
+    height: 0.6
+    position: auto
+  prsLimit: 20
+  prApproveComment: LGTM
+  issuesLimit: 50
+  notificationsLimit: 20
+  view: prs
+  refetchIntervalMinutes: 10
+  layout:
+    prs:
+      updatedAt:
+        width: 5
+      createdAt:
+        width: 5
+        hidden: true
+      repo:
+        width: 20
+      author:
+        width: 15
+      authorIcon:
+        hidden: false
+      labels:
+        width: 22
+        hidden: true
+      assignees:
+        width: 20
+        hidden: true
+      base:
+        width: 18
+        hidden: false
+      lines:
+        width: 15
+    issues:
+      updatedAt:
+        width: 5
+      createdAt:
+        width: 5
+      repo:
+        width: 22
+      creator:
+        width: 10
+      creatorIcon:
+        hidden: false
+      assignees:
+        width: 20
+        hidden: true
+
+keybindings:
+  universal:
+    - key: B
+      name: board (my items, current sprint)
+      command: open "https://github.com/orgs/Brand-Boekhouders/projects/5?filterQuery=assignee%3A%40me+sprint%3A%40current"
+  prs:
+    - key: O
+      name: open in worktree
+      command: ~/.config/gh-dash/bin/gh-pr-worktree {{.RepoName}} {{.PrNumber}}
+    - key: T
+      name: unresolved threads
+      command: ~/.config/gh-dash/bin/gh-todo --pr {{.RepoName}} {{.PrNumber}}
+    - key: M
+      name: auto-merge (merge commit)
+      command: gh pr merge {{.PrNumber}} -R {{.RepoName}} --auto --merge; printf 'Enter to return '; read -r _
+
+repoPaths:
+  Brand-Boekhouders/erp: ~/Documents/brand/erp
+  Brand-Boekhouders/brandboekhouders-automations: ~/Documents/brand/brandboekhouders-automations
+  Brand-Boekhouders/erp-tester-toolkit: ~/Documents/brand/erp-tester-toolkit
+
+repo:
+  branchesRefetchIntervalSeconds: 30
+  prsRefetchIntervalSeconds: 60
+
+theme:
+  ui:
+    sectionsShowCount: true
+    table:
+      showSeparator: true
+      compact: false
+
+pager:
+  diff: ""
+confirmQuit: false
+showAuthorIcons: true
+smartFilteringAtLaunch: false
+includeReadNotifications: true

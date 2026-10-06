@@ -1,0 +1,85 @@
+#!/usr/bin/env bash
+# What blocks my open PRs: unresolved threads, requested changes, failing checks, conflicts.
+#
+#   gh-todo              fzf picker (Enter opens the PR in its worktree)
+#   gh-todo --list       plain table
+#   gh-todo --all        include PRs outside Brand-Boekhouders
+#   gh-todo --pr OWNER/REPO N [--no-pause]
+#                        print the unresolved review threads of one PR
+set -euo pipefail
+
+BIN_DIR="$(cd "$(dirname "$(readlink -f "$0")")" && pwd)"
+ORG="Brand-Boekhouders"
+
+threads() {
+  local repo=$1 num=$2
+  gh api graphql -F owner="${repo%%/*}" -F name="${repo#*/}" -F num="$num" -f query='
+    query($owner:String!,$name:String!,$num:Int!){repository(owner:$owner,name:$name){pullRequest(number:$num){
+      title url
+      reviewThreads(first:100){nodes{isResolved isOutdated path line
+        comments(first:1){nodes{author{login} body}}}}}}}' --jq '
+    .data.repository.pullRequest as $pr
+    | [$pr.reviewThreads.nodes[] | select(.isResolved | not)] as $open
+    | "\($pr.title)\n\($pr.url)\n\($open | length) unresolved thread(s)\n",
+      ($open[] | "● \(.path):\(.line // "?")  @\(.comments.nodes[0].author.login)\(if .isOutdated then "  (outdated)" else "" end)\n"
+        + (.comments.nodes[0].body | split("\n") | map(select(length > 0)) | .[:4] | map("    " + .) | join("\n")) + "\n")'
+}
+
+if [[ "${1:-}" == "--pr" ]]; then
+  threads "$2" "$3"
+  if [[ "${4:-}" != "--no-pause" ]]; then printf 'Enter to return '; read -r _; fi
+  exit 0
+fi
+
+mode=pick
+query="is:pr is:open archived:false author:@me org:$ORG"
+for arg in "$@"; do
+  case $arg in
+    --list) mode=list ;;
+    --all) query="is:pr is:open archived:false author:@me" ;;
+    *) echo "unknown option: $arg" >&2; exit 2 ;;
+  esac
+done
+
+# One row per PR, worst problem first: rank, verdict, repo#num, threads, ci, review, title, repo, num
+rows=$(gh api graphql -f q="$query" -f query='
+  query($q:String!){search(type:ISSUE,first:50,query:$q){nodes{... on PullRequest{
+    number title isDraft reviewDecision mergeable
+    repository{nameWithOwner}
+    reviewThreads(first:100){nodes{isResolved}}
+    commits(last:1){nodes{commit{statusCheckRollup{contexts(first:100){nodes{
+      __typename ... on CheckRun{status conclusion} ... on StatusContext{state}}}}}}}}}}}' --jq '
+  .data.search.nodes[]
+  | ([.reviewThreads.nodes[] | select(.isResolved | not)] | length) as $threads
+  | ([.commits.nodes[0].commit.statusCheckRollup.contexts.nodes[]?]) as $checks
+  | ([$checks[] | select(.conclusion == "FAILURE" or .conclusion == "TIMED_OUT" or .conclusion == "STARTUP_FAILURE"
+        or .state == "FAILURE" or .state == "ERROR")] | length) as $failed
+  | ([$checks[] | select((.__typename == "CheckRun" and .status != "COMPLETED") or .state == "PENDING")] | length) as $pending
+  | (if .isDraft then [6, "draft"]
+     elif $threads > 0 then [0, "fix threads"]
+     elif .reviewDecision == "CHANGES_REQUESTED" then [1, "fix review"]
+     elif $failed > 0 then [2, "fix ci"]
+     elif .mergeable == "CONFLICTING" then [3, "conflict"]
+     elif .reviewDecision == "APPROVED" and $pending == 0 then [4, "ready"]
+     elif .reviewDecision == "APPROVED" then [4, "ready (ci running)"]
+     else [5, "waiting review"] end) as $v
+  | [$v[0], $v[1], "\(.repository.nameWithOwner | split("/")[1])#\(.number)", "\($threads)",
+     (if $failed > 0 then "✗\($failed)" elif $pending > 0 then "…\($pending)" else "✓" end),
+     (.reviewDecision // "-" | ascii_downcase), .title, .repository.nameWithOwner, "\(.number)"]
+  | @tsv' | sort -n)
+
+if [[ -z "$rows" ]]; then echo "No open PRs."; exit 0; fi
+
+table=$(printf '%s\n' "$rows" | awk -F'\t' '{printf "%-19s %-34s %-8s %-5s %-18s %s\t%s\t%s\n", $2, $3, "threads " $4, $5, $6, $7, $8, $9}')
+
+if [[ $mode == list || ! -t 1 ]] || ! command -v fzf >/dev/null; then
+  printf '%s\n' "$table" | cut -f1
+  exit 0
+fi
+
+choice=$(printf '%s\n' "$table" | fzf --delimiter='\t' --with-nth=1 --no-sort --reverse \
+  --header='Enter: open worktree · ctrl-o: open in browser' \
+  --preview="$BIN_DIR/gh-todo --pr {2} {3} --no-pause" --preview-window=down,60%,wrap \
+  --bind="ctrl-o:execute-silent(gh pr view {3} -R {2} --web)") || exit 0
+
+"$BIN_DIR/gh-pr-worktree" "$(cut -f2 <<<"$choice")" "$(cut -f3 <<<"$choice")"

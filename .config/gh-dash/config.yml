@@ -1,0 +1,44 @@
+# Work dashboard (Brand-Boekhouders). Personal repos: `gh dash-personal`.
+# GitHub search can't see unresolved review threads or reliable CI state for erp
+# (status: is stuck on pending there); `gh todo` and the T keybinding cover that.
+include:
+  - common.yml
+
+prSections:
+  # --- my PRs, in the order I act on them ---
+  - title: Fix
+    filters: org:Brand-Boekhouders is:open author:@me review:changes_requested NOT epic in:title
+  - title: Ready to merge
+    filters: org:Brand-Boekhouders is:open author:@me draft:false review:approved NOT epic in:title
+  - title: Waiting on review
+    filters: org:Brand-Boekhouders is:open author:@me draft:false review:required NOT epic in:title
+  - title: Drafts
+    filters: org:Brand-Boekhouders is:open author:@me draft:true NOT epic in:title
+  # --- teammates' PRs (review requests are rarely set, so don't rely on them) ---
+  - title: To review
+    filters: org:Brand-Boekhouders is:open draft:false -author:@me -author:app/dependabot -reviewed-by:@me NOT epic in:title
+  - title: Re-review
+    filters: org:Brand-Boekhouders is:open draft:false -author:@me -author:app/dependabot reviewed-by:@me -review:approved NOT epic in:title
+  - title: Epics
+    filters: org:Brand-Boekhouders is:open epic in:title
+  - title: Dependabot
+    filters: org:Brand-Boekhouders is:open author:app/dependabot
+  # --- hygiene: work the PO can't see on a board ---
+  - title: No issue linked
+    filters: org:Brand-Boekhouders is:open author:@me -linked:issue
+
+issuesSections:
+  - title: BERP
+    filters: org:Brand-Boekhouders is:open assignee:@me project:Brand-Boekhouders/5
+  - title: BBAUT
+    filters: org:Brand-Boekhouders is:open assignee:@me project:Brand-Boekhouders/6
+  - title: Not on a board
+    filters: org:Brand-Boekhouders is:open assignee:@me no:project
+
+notificationsSections:
+  - title: Participating
+    filters: reason:author reason:comment reason:mention reason:team-mention reason:assign reason:state-change
+  - title: Review requested
+    filters: reason:review-requested
+  - title: CI / other
+    filters: reason:ci-activity reason:subscribed reason:security-alert
