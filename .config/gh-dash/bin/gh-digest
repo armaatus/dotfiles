@@ -1,0 +1,70 @@
+#!/usr/bin/env bash
+# Weekly digest of teammates' merged PRs that I did not review in depth (no note in
+# review-notes), grouped by domain. Appended to this ISO week's notes file.
+#
+#   gh-digest [--days N] [--stdout]
+set -euo pipefail
+
+BIN_DIR="$(cd "$(dirname "$(readlink -f "$0")")" && pwd)"
+NOTES="$HOME/Documents/brand/review-notes"
+days=7 to_stdout=false
+while (($#)); do
+  case $1 in
+    --days) days=$2; shift ;;
+    --stdout) to_stdout=true ;;
+    *) echo "unknown option: $1" >&2; exit 2 ;;
+  esac
+  shift
+done
+
+since=$(date -v-"${days}"d +%Y-%m-%d)
+week=$(date +%G-W%V)
+mkdir -p "$NOTES"
+noted=$( (cat "$NOTES"/*.md 2>/dev/null || true) | { grep -oE '[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+#[0-9]+' || true; } | jq -R . | jq -s .)
+
+prs=$(gh api graphql --paginate -f q="is:pr is:merged archived:false org:Brand-Boekhouders merged:>=$since -author:@me -author:app/dependabot" -f query='
+  query($q:String!,$endCursor:String){search(type:ISSUE,first:50,after:$endCursor,query:$q){
+    pageInfo{hasNextPage endCursor}
+    nodes{... on PullRequest{number title url body mergedAt baseRefName headRefName additions deletions
+      author{login} repository{nameWithOwner}
+      closingIssuesReferences(first:5){nodes{number title}}
+      files(first:100){nodes{path additions deletions}}}}}}' |
+  jq -s -L "$BIN_DIR/lib" --argjson noted "$noted" 'include "tier";
+    [.[].data.search.nodes[]
+     | select((.baseRefName == "main" and .headRefName == "develop") | not)
+     | select(("\(.repository.nameWithOwner)#\(.number)" | IN($noted[])) | not)
+     | ({files: .files.nodes} | tier) as $t
+     | {pr: "\(.repository.nameWithOwner)#\(.number)", url, title, author: .author.login,
+        merged: .mergedAt[:10], tier: $t.tier, why: $t.reason, size: "+\(.additions) -\(.deletions)",
+        issues: [.closingIssuesReferences.nodes[] | "#\(.number) \(.title)"],
+        dirs: ([.files.nodes[].path | split("/")[:3] | join("/")] | unique | .[:12]),
+        body: (.body // "" | gsub("<!--[\\s\\S]*?-->"; "") | .[:1200])}]')
+
+count=$(jq length <<<"$prs")
+if ((count == 0)); then echo "No merged PRs without a review note since $since."; exit 0; fi
+echo "Summarising $count merged PRs since $since..." >&2
+
+digest=$(claude -p --tools "" <<EOF
+You write a weekly digest for a developer who reviews only the riskiest of their coworker's
+(mostly AI-written) PRs and wants to keep an accurate mental model of the system.
+Below are the PRs merged since $since that they did NOT review in depth, as JSON.
+
+Write markdown, no preamble, starting at heading level 3:
+- Group by domain (infer from paths, titles and issues; e.g. banking, invoices, bookkeeping,
+  trip registration, platform/infra, frontend shell, tooling). One "### <domain>" per group.
+- Per domain: 2-4 sentences on what changed in the system (new concepts, behaviour, data model,
+  responsibilities that moved), then bullets "[repo#N](url) title" with a few words each.
+- End with "### Worth a closer look": DEEP-tier items and anything that changes data, money,
+  auth or architecture, each with one line on why. Say "none" if there are none.
+Be factual; use only what the JSON says. Keep it under ~60 lines.
+
+$prs
+EOF
+)
+
+if $to_stdout; then printf '%s\n' "$digest"; exit 0; fi
+
+file="$NOTES/$week.md"
+[[ -f "$file" ]] || printf '# Week %s\n\n## Reviews\n' "$week" >"$file"
+printf '\n## Digest %s (merged since %s, %d PRs)\n\n%s\n' "$(date +%Y-%m-%d)" "$since" "$count" "$digest" >>"$file"
+echo "Appended the digest to $file"

@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+# Teammates' PRs waiting on me, riskiest first (DEEP > SKIM > TRUST, see lib/tier.jq).
+# Same queries as the dash's "To review" and "Re-review" sections.
+#
+#   gh-queue          fzf picker (Enter starts a review session)
+#   gh-queue --list   plain table
+set -euo pipefail
+
+BIN_DIR="$(cd "$(dirname "$(readlink -f "$0")")" && pwd)"
+base="is:pr is:open archived:false org:Brand-Boekhouders draft:false -author:@me -author:app/dependabot NOT epic in:title"
+
+fetch() {
+  local kind=$1 query=$2
+  gh api graphql -f q="$query" -f query='
+    query($q:String!){search(type:ISSUE,first:50,query:$q){nodes{... on PullRequest{
+      number title author{login} repository{nameWithOwner}
+      files(first:100){nodes{path additions deletions}}}}}}' |
+  jq -r -L "$BIN_DIR/lib" --arg kind "$kind" 'include "tier";
+    .data.search.nodes[]
+    | ({files: .files.nodes} | tier) as $t
+    | [({DEEP: 0, SKIM: 1, TRUST: 2}[$t.tier]), $t.tier, $kind,
+       "\(.repository.nameWithOwner | split("/")[1])#\(.number)", .author.login, .title, $t.reason,
+       .repository.nameWithOwner, "\(.number)"]
+    | @tsv'
+}
+
+rows=$( { fetch review "$base -reviewed-by:@me"; fetch re-review "$base reviewed-by:@me -review:approved"; } | sort -t$'\t' -k1,1n)
+if [[ -z "$rows" ]]; then echo "Nothing to review."; exit 0; fi
+
+table=$(printf '%s\n' "$rows" | awk -F'\t' '{printf "%-6s %-10s %-30s %-12s %s  (%s)\t%s\t%s\n", $2, $3, $4, $5, $6, $7, $8, $9}')
+
+if [[ "${1:-}" == "--list" || ! -t 1 ]] || ! command -v fzf >/dev/null; then
+  printf '%s\n' "$table" | cut -f1
+  exit 0
+fi
+
+choice=$(printf '%s\n' "$table" | fzf --delimiter='\t' --with-nth=1 --no-sort --reverse \
+  --header='Enter: review session · ctrl-o: open in browser' \
+  --preview="$BIN_DIR/gh-pr-context {2} {3}" --preview-window=down,60%,wrap \
+  --bind="ctrl-o:execute-silent(gh pr view {3} -R {2} --web)") || exit 0
+
+"$BIN_DIR/gh-pr-review" "$(cut -f2 <<<"$choice")" "$(cut -f3 <<<"$choice")"

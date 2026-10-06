@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+# Review a PR in a tmux session `<repo>-<N>`: tuicr on the left, a read-only Claude
+# reviewer (pr-review-session skill) on the right, both in the PR's worktree.
+# Attaches in a new Ghostty window, or switches to it when already inside tmux.
+#
+#   gh-pr-review OWNER/REPO N
+set -euo pipefail
+
+repo=$1 num=$2
+BIN_DIR="$(cd "$(dirname "$(readlink -f "$0")")" && pwd)"
+CONFIG_DIR="$(dirname "$BIN_DIR")"
+session="${repo##*/}-$num"
+
+if ! tmux has-session -t "=$session" 2>/dev/null; then
+  dir=$("$BIN_DIR/gh-pr-worktree" --no-open "$repo" "$num")
+  # A reused worktree may be behind the PR; only fast-forward when there is nothing to lose.
+  if [[ -z "$(git -C "$dir" status --porcelain)" ]]; then
+    git -C "$dir" pull --quiet --ff-only >/dev/null 2>&1 || true
+  fi
+  mkdir -p "$HOME/Documents/brand/review-notes"
+
+  printf -v claude_cmd 'claude --settings %q -n %q %q; exec zsh -l' \
+    "$CONFIG_DIR/review/claude-settings.json" "review $repo#$num" "/pr-review-session $repo#$num"
+  printf -v tuicr_cmd 'tuicr pr %q; exec zsh -l' "$repo#$num"
+
+  tmux new-session -d -s "$session" -c "$dir" -x 240 -y 60 "zsh -lic $(printf %q "$tuicr_cmd")"
+  tmux split-window -h -t "$session:" -c "$dir" "zsh -lic $(printf %q "$claude_cmd")"
+  # Keep tuicr at 60% however small or large the attaching window is.
+  tmux set-window-option -t "$session:" main-pane-width 60%
+  tmux set-hook -t "=$session" window-resized "select-layout main-vertical"
+  tmux select-layout -t "$session:" main-vertical
+  tmux select-pane -L -t "$session:"
+fi
+
+if [[ -n "${TMUX:-}" ]]; then
+  tmux switch-client -t "=$session"
+else
+  open -na Ghostty.app --args --window-save-state=never --title="review $repo#$num" -e /bin/zsh -lic "tmux attach -t '=$session'"
+fi
+echo "Review session $session"

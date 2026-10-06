@@ -1,0 +1,57 @@
+#!/usr/bin/env bash
+# Read-only context for reviewing a PR, for the reviewer Claude (pr-review-session skill):
+# metadata, linked issues, tier, commits, what the CI bot and I last reviewed, open threads.
+#
+#   gh-pr-context OWNER/REPO N
+set -euo pipefail
+
+repo=$1 num=$2
+LIB="$(cd "$(dirname "$(readlink -f "$0")")/lib" && pwd)"
+me=$(gh api user --jq .login)
+
+gh api graphql -F owner="${repo%%/*}" -F name="${repo#*/}" -F num="$num" -f query='
+  query($owner:String!,$name:String!,$num:Int!){repository(owner:$owner,name:$name){pullRequest(number:$num){
+    number title url author{login} isDraft state baseRefName headRefName headRefOid additions deletions body
+    closingIssuesReferences(first:10){nodes{number title body}}
+    files(first:100){nodes{path additions deletions}}
+    commits(last:100){nodes{commit{oid committedDate messageHeadline}}}
+    reviews(last:50){nodes{author{login __typename} state submittedAt commit{oid}}}
+    reviewThreads(first:100){nodes{isResolved isOutdated path line
+      comments(first:1){nodes{author{login} body}}}}}}}' |
+jq -r -L "$LIB" --arg me "$me" --arg repo "$repo" 'include "tier";
+  .data.repository.pullRequest as $pr
+  | ($pr | {files: .files.nodes} | tier) as $t
+  | def last_review(who): [$pr.reviews.nodes[] | select(who)] | last;
+  (last_review(.author.__typename == "Bot" and .author.login == "claude")) as $bot
+  | (last_review(.author.login == $me)) as $mine
+  # Commits listed after the one the review was made on; dates lie when commits are pushed late.
+  | def since($review): if $review then
+      [$pr.commits.nodes[].commit] | (map(.oid) | index($review.commit.oid)) as $i
+      | if $i == null then . else .[$i + 1:] end else null end;
+  "# \($repo)#\($pr.number): \($pr.title)",
+  "url: \($pr.url)",
+  "author: \($pr.author.login)   state: \($pr.state)\(if $pr.isDraft then " (draft)" else "" end)",
+  "base: \($pr.baseRefName)   head: \($pr.headRefName) @ \($pr.headRefOid)",
+  "size: +\($pr.additions) -\($pr.deletions), \($pr.files.nodes | length) files",
+  "tier: \($t.tier) (\($t.reason))",
+  "tuicr session: gh:\($repo)/pr/\($pr.number)",
+  "",
+  "## Review coverage",
+  "CI bot (claude) last review: \(if $bot then "\($bot.state) at \($bot.commit.oid)" else "none" end)",
+  "my last review: \(if $mine then "\($mine.state) at \($mine.commit.oid)" else "none" end)",
+  "commits after the bot review (not AI-reviewed yet): \(if $bot then (since($bot) | if length == 0 then "none" else map("\n  \(.oid) \(.messageHeadline)") | join("") end) else "all (bot never reviewed)" end)",
+  "commits after my last review: \(if $mine then (since($mine) | if length == 0 then "none" else map("\n  \(.oid) \(.messageHeadline)") | join("") end) else "all (first review)" end)",
+  "",
+  "## Commits",
+  ($pr.commits.nodes[].commit | "\(.oid[:10]) \(.messageHeadline)"),
+  "",
+  "## Linked issues",
+  (if ($pr.closingIssuesReferences.nodes | length) == 0 then "none (check the body for \"Part of #N\")" else
+    ($pr.closingIssuesReferences.nodes[] | "### #\(.number) \(.title)\n\(.body // "" | .[:3000])") end),
+  "",
+  "## Open review threads",
+  ([$pr.reviewThreads.nodes[] | select(.isResolved | not)] | if length == 0 then "none" else
+    (.[] | "- \(.path):\(.line // "?") @\(.comments.nodes[0].author.login)\(if .isOutdated then " (outdated)" else "" end): \(.comments.nodes[0].body | split("\n")[0] | .[:160])") end),
+  "",
+  "## PR description",
+  ($pr.body // "" | .[:6000])'

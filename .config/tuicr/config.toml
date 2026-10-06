@@ -1,0 +1,20 @@
+# Reviewing PRs from gh-dash: `I` opens a tmux session with tuicr + a Claude reviewer
+# (see ~/.config/gh-dash/README.md). Types match REVIEW.md's severities, so the author's
+# /process-review reads ours like the CI bot's.
+editor = "nvim"
+username = "armaatus"
+pr_comments_visibility = "unresolved"
+show_pr_checks = true
+
+comment_types = [
+  { id = "consider", label = "🟡 consider", definition = "Medium: code quality, maintainability or test weakness; fix recommended", color = "yellow" },
+  { id = "blocking", label = "🔴 blocking", definition = "Critical: security, data loss or will break production; must fix before merge", color = "red" },
+  { id = "should-fix", label = "🟠 should-fix", definition = "High: performance, architecture or reliability risk; should fix before merge", color = "#d19a66" },
+  { id = "nit", label = "⚪ nit", definition = "Low: style or minor improvement; optional", color = "#808080" },
+  { id = "question", definition = "a question for the author" },
+  { id = "praise", definition = "positive feedback" },
+  { id = "ask", label = "ask (local)", definition = "a question for the local AI reviewer; never submitted", color = "#56b6c2" },
+]
+
+[forge]
+comment_type_prefix = true

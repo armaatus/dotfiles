@@ -59,6 +59,9 @@ keybindings:
     - key: O
       name: open in worktree
       command: ~/.config/gh-dash/bin/gh-pr-worktree {{.RepoName}} {{.PrNumber}}
+    - key: I
+      name: review with tuicr + Claude
+      command: ~/.config/gh-dash/bin/gh-pr-review {{.RepoName}} {{.PrNumber}}
     - key: T
       name: unresolved threads
       command: ~/.config/gh-dash/bin/gh-todo --pr {{.RepoName}} {{.PrNumber}}
